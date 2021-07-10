@@ -26,7 +26,9 @@ class QuridoBoard:
                 return True
         return False
 
-    def use_wall(self, player_num, x2, y2, dir):
+    def use_wall(self, player_num, str_x2, str_y2, dir):
+        x2 = int(str_x2)
+        y2 = int(str_y2)
         if dir == "vertical":
             x1 = x2
             x3 = x2
@@ -40,9 +42,10 @@ class QuridoBoard:
         else:
             return False
         if self.can_use_wall(player_num, x2, y2, dir):
-            self.board[x1][y1] = BOARD_AIR
-            self.board[x2][y2] = BOARD_AIR
-            self.board[x3][y3] = BOARD_AIR
+            self.board[x1][y1] = BOARD_WALL
+            self.board[x2][y2] = BOARD_WALL
+            self.board[x3][y3] = BOARD_WALL
+            self.left_wall[player_num] -= 1
             return True
         else:
             return False
@@ -67,28 +70,27 @@ class QuridoBoard:
                     possible_moves.append("use-wall/" + str(2*i+1) + "/" + str(2*j+1) + "/vertical")
         return possible_moves
 
-    def is_win(self, player_num):
-        if player_num == BOARD_PLAYER1:
-            end_line = MAX_BOARD_SIZE - 2
-        else:
-            end_line = 2
-        for i in range(MAX_BOARD_SIZE):
-            if self.board[i][end_line] == player_num:
-                return True
-        return False
-
     def print_board(self):
-        for low in self.board:
-            for block in low:
-                if block == BOARD_AIR:
-                    print("□", end='')
-                elif block == BOARD_WALL:
-                    print("■", end='')
-                elif block == BOARD_PLAYER1:
-                    print("◎", end='')
-                elif block == BOARD_PLAYER2:
-                    print("●", end='')
+        print("  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6")
+        for i in range(MAX_BOARD_SIZE, -1, -1):
+            print(str((i) % 10) + " ", end='')
+            for j in range(MAX_BOARD_SIZE+1):
+                if self.board[j][i] == BOARD_AIR:
+                    if i % 2 == 0 and j % 2 == 0:
+                        print("□ ", end='')
+                    elif i * j % 2 == 1:
+                        print(". ", end='')
+                    else:
+                        print("  ", end='')
+                elif self.board[j][i] == BOARD_WALL:
+                    print("■ ", end='')
+                elif self.board[j][i] == BOARD_PLAYER1:
+                    print("◎ ", end='')
+                elif self.board[j][i] == BOARD_PLAYER2:
+                    print("● ", end='')
             print()
+
+        print("[아래 : " + str(self.calculate_need_turn(1)) + " / 위 : " + str(self.calculate_need_turn(2)) + "] \n")
 
     def can_move(self, player_num, x, y, direction):
         opp_player_num = self.get_opponent_player(player_num)
@@ -97,7 +99,7 @@ class QuridoBoard:
             if y + 2 <= MAX_BOARD_SIZE:
                 # if wall
                 if self.board[x][y + 1] == BOARD_WALL:
-                    return False
+                    return "none"
                 # if not wall
                 elif self.board[x][y + 1] == BOARD_AIR:
                     # if not wall and nothing
@@ -181,8 +183,8 @@ class QuridoBoard:
         else:
             return False
         # if player's wall remain and valid wall
-        if self.board[x1][y1] != BOARD_AIR or self.board[x2][y2] != BOARD_AIR or self.board[x3][y3] and x2 * y2 % 2 == 1\
-                and self.left_wall[player_num] > 0:
+        if self.board[x1][y1] == BOARD_AIR and self.board[x2][y2] == BOARD_AIR and self.board[x3][y3] == BOARD_AIR\
+                and x2 * y2 % 2 == 1 and self.left_wall[player_num] > 0:
             self.board[x2][y1] = BOARD_WALL
             self.board[x2][y2] = BOARD_WALL
             if self.calculate_need_turn(player_num) != -1:
@@ -342,14 +344,20 @@ class QuridoBoard:
                     set_root(pos, -2, -2, count)
                 root_stack.remove(pos)
             if not root_stack:
-                for i in score_board:
-                    for j in i:
-                        print(str(j) + "\t", end='')
-                    print()
+                # for i in score_board:
+                #     for j in i:
+                #         print(str(j) + "\t", end='')
+                #     print()
                 return -1
+            game_end = False
+            score = MAX_BOARD_SIZE * MAX_BOARD_SIZE
             for i in range(MAX_BOARD_SIZE):
                 if score_board[i][end_line] != -1:
-                    return score_board[i][end_line]
+                    game_end = True
+                    if score_board[i][end_line] < score:
+                        score = score_board[i][end_line]
+            if game_end:
+                return score
 
     def get_opponent_player(self, player_num):
         if player_num == BOARD_PLAYER1:
