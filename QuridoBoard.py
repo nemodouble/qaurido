@@ -70,6 +70,48 @@ class QuridoBoard:
                     possible_moves.append("use-wall/" + str(2*i+1) + "/" + str(2*j+1) + "/vertical")
         return possible_moves
 
+    def unmake_move(self, nplayer, move):
+        if move.find("walk") != -1:
+            if move.split('/')[1] == "up":
+                self.move_player(nplayer, "down")
+            elif move.split('/')[1] == "down":
+                self.move_player(nplayer, "up")
+            elif move.split('/')[1] == "left":
+                self.move_player(nplayer, "right")
+            elif move.split('/')[1] == "right":
+                self.move_player(nplayer, "left")
+        elif move.find("jump") != -1:
+            if move.split('/')[1] == "up":
+                if move.split('/')[0] == "jump-forward":
+                    self.jump_player(nplayer, "down", move.split('/')[0])
+                elif move.split('/')[0] == "jump-right":
+                    self.jump_player(nplayer, "left", "jump-left")
+                elif move.split('/')[0] == "jump-left":
+                    self.jump_player(nplayer, "right", "jump-right")
+            elif move.split('/')[1] == "down":
+                if move.split('/')[0] == "jump-forward":
+                    self.jump_player(nplayer, "up", move.split('/')[0])
+                elif move.split('/')[0] == "jump-right":
+                    self.jump_player(nplayer, "right", "jump-left")
+                elif move.split('/')[0] == "jump-left":
+                    self.jump_player(nplayer, "left", "jump-right")
+            elif move.split('/')[1] == "left":
+                if move.split('/')[0] == "jump-forward":
+                    self.jump_player(nplayer, "right", move.split('/')[0])
+                elif move.split('/')[0] == "jump-right":
+                    self.jump_player(nplayer, "up", "jump-left")
+                elif move.split('/')[0] == "jump-left":
+                    self.jump_player(nplayer, "down", "jump-right")
+            elif move.split('/')[1] == "right":
+                if move.split('/')[0] == "jump-forward":
+                    self.jump_player(nplayer, "left", move.split('/')[0])
+                elif move.split('/')[0] == "jump-right":
+                    self.jump_player(nplayer, "down", "jump-left")
+                elif move.split('/')[0] == "jump-left":
+                    self.jump_player(nplayer, "up", "jump-right")
+        elif move.find("wall") != -1:
+            self.unuse_wall(nplayer, move.split('/')[1], move.split('/')[2], move.split('/')[3])
+
     def print_board(self):
         print("  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6")
         for i in range(MAX_BOARD_SIZE, -1, -1):
@@ -90,7 +132,10 @@ class QuridoBoard:
                     print("● ", end='')
             print()
 
-        print("[아래 : " + str(self.calculate_need_turn(1)) + " / 위 : " + str(self.calculate_need_turn(2)) + "] \n")
+        print("#")
+        print("아래 칸수 : " + str(self.calculate_need_turn(1)) + " / 위 칸수 : " + str(self.calculate_need_turn(2)))
+        print("아래 벽수 : " + str(self.left_wall[1]) + " / 위 벽수 : " + str(self.left_wall[2]))
+        print("#")
 
     def can_move(self, player_num, x, y, direction):
         opp_player_num = self.get_opponent_player(player_num)
@@ -265,6 +310,27 @@ class QuridoBoard:
         else:
             return False
         self.board[self.player_pos[player_num][0]][self.player_pos[player_num][1]] = player_num
+
+    def unuse_wall(self, player_num, str_x2, str_y2, dir):
+        x2 = int(str_x2)
+        y2 = int(str_y2)
+        if dir == "vertical":
+            x1 = x2
+            x3 = x2
+            y1 = y2 - 1
+            y3 = y2 + 1
+        elif dir == "horizon":
+            x1 = x2 - 1
+            x3 = x2 + 1
+            y1 = y2
+            y3 = y2
+        else:
+            return False
+        self.board[x1][y1] = BOARD_AIR
+        self.board[x2][y2] = BOARD_AIR
+        self.board[x3][y3] = BOARD_AIR
+        self.left_wall[player_num] += 1
+        return True
 
     def calculate_need_turn(self, player_num:int):
         if player_num == 1:

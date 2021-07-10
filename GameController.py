@@ -19,6 +19,9 @@ class GameController( TwoPlayersGame ):
         elif move.find("wall") != -1:
             self.quridoBoard.use_wall(self.nplayer, move.split('/')[1], move.split('/')[2], move.split('/')[3])
 
+    def unmake_move(self, move):
+        self.quridoBoard.unmake_move(self.nplayer, move)
+
     def is_over(self):
         return self.quridoBoard.calculate_need_turn(self.nplayer) == 0
 
