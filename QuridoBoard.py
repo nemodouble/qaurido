@@ -10,9 +10,9 @@ class QuridoBoard:
     def __init__(self):
         self.board = [[BOARD_AIR] * (MAX_BOARD_SIZE + 1) for i in range(MAX_BOARD_SIZE + 1)]
         self.left_wall = [-1, START_WALL_COUNT, START_WALL_COUNT]
-        self.board[int(MAX_BOARD_SIZE/2)][2] = BOARD_PLAYER1
-        self.board[int(MAX_BOARD_SIZE/2)][MAX_BOARD_SIZE-2] = BOARD_PLAYER2
-        self.player_pos = [[-1, -1], [int(MAX_BOARD_SIZE/2), 2], [int(MAX_BOARD_SIZE/2), MAX_BOARD_SIZE - 2]]
+        self.board[int(MAX_BOARD_SIZE/2)][0] = BOARD_PLAYER1
+        self.board[int(MAX_BOARD_SIZE/2)][MAX_BOARD_SIZE] = BOARD_PLAYER2
+        self.player_pos = [[-1, -1], [int(MAX_BOARD_SIZE/2), 0], [int(MAX_BOARD_SIZE/2), MAX_BOARD_SIZE]]
 
     def move_player(self, player_num, direction):
         if self.can_move(player_num, self.player_pos[player_num][0], self.player_pos[player_num][1], direction) == "walk":
@@ -334,9 +334,9 @@ class QuridoBoard:
 
     def calculate_need_turn(self, player_num:int):
         if player_num == 1:
-            end_line = MAX_BOARD_SIZE - 2
+            end_line = MAX_BOARD_SIZE
         elif player_num == 2:
-            end_line = 2
+            end_line = 0
         # 2차원 보드랑 똑같은 크기
         score_board = [[-1] * (MAX_BOARD_SIZE + 1) for i in range(MAX_BOARD_SIZE + 1)]
         count = 0

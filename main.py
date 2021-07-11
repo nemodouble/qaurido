@@ -6,5 +6,5 @@ import cProfile
 
 ai = Negamax(3)
 game = GameController( [ AI_Player(ai), AI_Player(ai) ] )
-# history = game.play()
-cProfile.run("game.play(1)")
+history = game.play()
+# cProfile.run("game.play(1)")
