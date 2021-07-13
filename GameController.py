@@ -29,4 +29,7 @@ class GameController( TwoPlayersGame ):
         self.quridoBoard.print_board()
 
     def scoring(self):
-        return -self.quridoBoard.calculate_need_turn(self.nplayer)
+        score = -self.quridoBoard.calculate_need_turn(self.nplayer)
+        # score += self.quridoBoard.calculate_need_turn(self.nopponent)
+        score += self.quridoBoard.left_wall[self.nplayer]
+        return score
