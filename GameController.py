@@ -9,6 +9,7 @@ class GameController( TwoPlayersGame ):
         self.nplayer = 1
 
     def possible_moves(self):
+        #print(self.quridoBoard.get_possible_moves(self.nplayer))
         return self.quridoBoard.get_possible_moves(self.nplayer)
 
     def make_move(self, move):
@@ -18,6 +19,8 @@ class GameController( TwoPlayersGame ):
             self.quridoBoard.jump_player(self.nplayer, move.split('/')[1], move.split('/')[0])
         elif move.find("wall") != -1:
             self.quridoBoard.use_wall(self.nplayer, move.split('/')[1], move.split('/')[2], move.split('/')[3])
+        elif move == "error":
+            None
 
     def unmake_move(self, move):
         self.quridoBoard.unmake_move(self.nplayer, move)
@@ -30,6 +33,6 @@ class GameController( TwoPlayersGame ):
 
     def scoring(self):
         score = -self.quridoBoard.calculate_need_turn(self.nplayer)
-        # score += self.quridoBoard.calculate_need_turn(self.nopponent)
-        score += self.quridoBoard.left_wall[self.nplayer]
+        score += self.quridoBoard.calculate_need_turn(self.nopponent)
+        #score += 2*self.quridoBoard.left_wall[self.nplayer]
         return score

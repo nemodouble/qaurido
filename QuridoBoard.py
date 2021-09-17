@@ -1,18 +1,35 @@
-MAX_BOARD_SIZE = 16
-START_WALL_COUNT = 8
+import random
+
+MAX_BOARD_SIZE = 17
+STARTING_PLAYER_POS_X = int((MAX_BOARD_SIZE+2)/2)
+STARTING_WALLS_NUMBER = 10
 BOARD_AIR = 0
 BOARD_PLAYER1 = 1
 BOARD_PLAYER2 = 2
 BOARD_WALL = 3
 
 
+def get_opponent_player(player_num):
+    if player_num == BOARD_PLAYER1:
+        return BOARD_PLAYER2
+    elif player_num == BOARD_PLAYER2:
+        return BOARD_PLAYER1
+    else:
+        return -1
+
+
 class QuridoBoard:
     def __init__(self):
-        self.board = [[BOARD_AIR] * (MAX_BOARD_SIZE + 1) for i in range(MAX_BOARD_SIZE + 1)]
-        self.left_wall = [-1, START_WALL_COUNT, START_WALL_COUNT]
-        self.board[int(MAX_BOARD_SIZE/2)][0] = BOARD_PLAYER1
-        self.board[int(MAX_BOARD_SIZE/2)][MAX_BOARD_SIZE] = BOARD_PLAYER2
-        self.player_pos = [[-1, -1], [int(MAX_BOARD_SIZE/2), 0], [int(MAX_BOARD_SIZE/2), MAX_BOARD_SIZE]]
+        self.board = [[BOARD_AIR] * (MAX_BOARD_SIZE + 2) for i in range(MAX_BOARD_SIZE + 2)]
+        for i in range(MAX_BOARD_SIZE + 1):
+            self.board[i][0] = BOARD_WALL
+            self.board[i][MAX_BOARD_SIZE + 1] = BOARD_WALL
+            self.board[0][i] = BOARD_WALL
+            self.board[MAX_BOARD_SIZE + 1][i] = BOARD_WALL
+        self.left_wall = [-1, STARTING_WALLS_NUMBER, STARTING_WALLS_NUMBER]
+        self.board[STARTING_PLAYER_POS_X][1] = BOARD_PLAYER1
+        self.board[STARTING_PLAYER_POS_X][MAX_BOARD_SIZE] = BOARD_PLAYER2
+        self.player_pos = [[-1, -1], [STARTING_PLAYER_POS_X, 1], [STARTING_PLAYER_POS_X, MAX_BOARD_SIZE]]
 
     def move_player(self, player_num, direction):
         if self.can_move(player_num, self.player_pos[player_num][0], self.player_pos[player_num][1], direction) == "walk":
@@ -51,7 +68,7 @@ class QuridoBoard:
             return False
 
     def get_possible_moves(self, player_num):
-        possible_moves = []
+        possible_moves = ["error"]
         x = self.player_pos[player_num][0]
         y = self.player_pos[player_num][1]
         if self.can_move(player_num, x, y, "up") != "none":
@@ -64,10 +81,11 @@ class QuridoBoard:
             possible_moves.append(self.can_move(player_num, x, y, "right") + "/right")
         for i in range(8):
             for j in range(8):
-                if self.can_use_wall(player_num, 2*i+1, 2*j+1, "horizon"):
-                    possible_moves.append("use-wall/" + str(2*i+1) + "/" + str(2*j+1) + "/horizon")
-                if self.can_use_wall(player_num, 2*i+1, 2*j+1, "vertical"):
-                    possible_moves.append("use-wall/" + str(2*i+1) + "/" + str(2*j+1) + "/vertical")
+                if self.can_use_wall(player_num, 2*i+2, 2*j+2, "horizon"):
+                    possible_moves.append("use-wall/" + str(2*i+2) + "/" + str(2*j+2) + "/horizon")
+                if self.can_use_wall(player_num, 2*i+2, 2*j+2, "vertical"):
+                    possible_moves.append("use-wall/" + str(2*i+2) + "/" + str(2*j+2) + "/vertical")
+        #random.shuffle(possible_moves)
         return possible_moves
 
     def unmake_move(self, nplayer, move):
@@ -113,15 +131,15 @@ class QuridoBoard:
             self.unuse_wall(nplayer, move.split('/')[1], move.split('/')[2], move.split('/')[3])
 
     def print_board(self):
-        print("  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6")
-        for i in range(MAX_BOARD_SIZE, -1, -1):
-            print(str((i) % 10) + " ", end='')
-            for j in range(MAX_BOARD_SIZE+1):
+        print("  1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7")
+        for i in range(MAX_BOARD_SIZE, 0, -1):
+            print(str(i % 10) + " ", end='')
+            for j in range(1, MAX_BOARD_SIZE+1, 1):
                 if self.board[j][i] == BOARD_AIR:
                     if i % 2 == 0 and j % 2 == 0:
-                        print("□ ", end='')
-                    elif i * j % 2 == 1:
                         print(". ", end='')
+                    elif i * j % 2 == 1:
+                        print("□ ", end='')
                     else:
                         print("  ", end='')
                 elif self.board[j][i] == BOARD_WALL:
@@ -132,13 +150,15 @@ class QuridoBoard:
                     print("● ", end='')
             print()
 
-        print("#")
-        print("아래 칸수 : " + str(self.calculate_need_turn(1)) + " / 위 칸수 : " + str(self.calculate_need_turn(2)))
-        print("아래 벽수 : " + str(self.left_wall[1]) + " / 위 벽수 : " + str(self.left_wall[2]))
-        print("#")
+        print("# 아래 칸수 : " + str(self.calculate_need_turn(1)) + " / 위 칸수 : " + str(self.calculate_need_turn(2)), end=' ')
+        print("# 아래 벽수 : " + str(self.left_wall[1]) + " / 위 벽수 : " + str(self.left_wall[2]))
+        print("# 아래 스코어보드")
+        self.calculate_need_turn(1, True)
+        print("# 위 스코어보드")
+        self.calculate_need_turn(2, True)
 
     def can_move(self, player_num, x, y, direction):
-        opp_player_num = self.get_opponent_player(player_num)
+        opp_player_num = get_opponent_player(player_num)
         if direction == "up":
             # if not overBoard
             if y + 2 <= MAX_BOARD_SIZE:
@@ -156,7 +176,8 @@ class QuridoBoard:
                         if y + 3 <= MAX_BOARD_SIZE:
                             if self.board[x][y + 3] == BOARD_AIR:
                                 return "jump-forward"
-                            elif self.board[x + 1][y + 2] == BOARD_AIR and self.board[x - 1][y + 2] == BOARD_AIR:
+                        elif y + 2 <= MAX_BOARD_SIZE:
+                            if self.board[x + 1][y + 2] == BOARD_AIR and self.board[x - 1][y + 2] == BOARD_AIR:
                                 return "jump-both"
                             elif self.board[x + 1][y + 2] == opp_player_num:
                                 return "jump-left"
@@ -188,7 +209,8 @@ class QuridoBoard:
                         if x + 3 <= MAX_BOARD_SIZE:
                             if self.board[x + 3][y] == BOARD_AIR:
                                 return "jump-forward"
-                            elif self.board[x + 2][y + 1] == BOARD_AIR\
+                        elif x + 2 <= MAX_BOARD_SIZE:
+                            if self.board[x + 2][y + 1] == BOARD_AIR\
                                 and self.board[x + 2][y - 1] == BOARD_AIR:
                                 return "jump-both"
                             elif self.board[x + 2][y + 1] == opp_player_num:
@@ -229,10 +251,11 @@ class QuridoBoard:
             return False
         # if player's wall remain and valid wall
         if self.board[x1][y1] == BOARD_AIR and self.board[x2][y2] == BOARD_AIR and self.board[x3][y3] == BOARD_AIR\
-                and x2 * y2 % 2 == 1 and self.left_wall[player_num] > 0:
-            self.board[x2][y1] = BOARD_WALL
+                and x2 % 2 == 0 and y2 % 2 == 0 and self.left_wall[player_num] > 0:
+            self.board[x1][y1] = BOARD_WALL
             self.board[x2][y2] = BOARD_WALL
-            if self.calculate_need_turn(player_num) != -1:
+            self.board[x3][y3] = BOARD_WALL
+            if self.calculate_need_turn(player_num) != -1 and self.calculate_need_turn(get_opponent_player(player_num)) != -1:
                 self.board[x1][y1] = BOARD_AIR
                 self.board[x2][y2] = BOARD_AIR
                 self.board[x3][y3] = BOARD_AIR
@@ -244,7 +267,6 @@ class QuridoBoard:
                 return False
         else:
             return False
-
 
     def move_player_pos(self, player_num, direction):
         self.board[self.player_pos[player_num][0]][self.player_pos[player_num][1]] = BOARD_AIR
@@ -332,13 +354,13 @@ class QuridoBoard:
         self.left_wall[player_num] += 1
         return True
 
-    def calculate_need_turn(self, player_num:int):
+    def calculate_need_turn(self, player_num: int, print_scoreboard=False):
         if player_num == 1:
             end_line = MAX_BOARD_SIZE
         elif player_num == 2:
-            end_line = 0
+            end_line = 1
         # 2차원 보드랑 똑같은 크기
-        score_board = [[-1] * (MAX_BOARD_SIZE + 1) for i in range(MAX_BOARD_SIZE + 1)]
+        score_board = [[-1] * (MAX_BOARD_SIZE + 2) for i in range(MAX_BOARD_SIZE + 2)]
         count = 0
         # 2차원좌표 배열
         root_stack = [[self.player_pos[player_num][0], self.player_pos[player_num][1]]]
@@ -357,57 +379,21 @@ class QuridoBoard:
             for pos in tmp_stack:
                 # 위
                 can_move_up = self.can_move(player_num, pos[0], pos[1], "up")
-                if can_move_up == "walk":
+                if can_move_up != "none":
                     # 방문하지 않은곳이면
                     set_root(pos, 0, 2, count)
-                elif can_move_up == "jump-forward":
-                    set_root(pos, 0, 4, count)
-                elif can_move_up == "jump-both":
-                    set_root(pos, 2, 2, count)
-                    set_root(pos, -2, 2, count)
-                elif can_move_up == "jump-right":
-                    set_root(pos, 2, 2, count)
-                elif can_move_up == "jump-left":
-                    set_root(pos, -2, 2, count)
                 # 아래
                 can_move_down = self.can_move(player_num, pos[0], pos[1], "down")
-                if can_move_down == "walk":
+                if can_move_down != "none":
                     set_root(pos, 0, -2, count)
-                elif can_move_down == "jump-forward":
-                    set_root(pos, 0, -4, count)
-                elif can_move_down == "jump-both":
-                    set_root(pos, 2, -2, count)
-                    set_root(pos, -2, 2, count)
-                elif can_move_down == "jump-right":
-                    set_root(pos, -2, -2, count)
-                elif can_move_down == "jump-left":
-                    set_root(pos, 2, -2, count)
                 # 오른쪽
                 can_move_right = self.can_move(player_num, pos[0], pos[1], "right")
-                if can_move_right == "walk":
+                if can_move_right != "none":
                     set_root(pos, 2, 0, count)
-                elif can_move_right == "jump-forward":
-                    set_root(pos, 4, 0, count)
-                elif can_move_right == "jump-both":
-                    set_root(pos, 2, -2, count)
-                    set_root(pos, 2, 2, count)
-                elif can_move_right == "jump-right":
-                    set_root(pos, 2, -2, count)
-                elif can_move_right == "jump-left":
-                    set_root(pos, 2, 2, count)
                 # 왼쪽
                 can_move_left = self.can_move(player_num, pos[0], pos[1], "left")
-                if can_move_left == "walk":
+                if can_move_left != "none":
                     set_root(pos, -2, 0, count)
-                elif can_move_left == "jump-forward":
-                    set_root(pos, -4, 0, count)
-                elif can_move_left == "jump-both":
-                    set_root(pos, -2, -2, count)
-                    set_root(pos, -2, 2, count)
-                elif can_move_left == "jump-right":
-                    set_root(pos, -2, 2, count)
-                elif can_move_left == "jump-left":
-                    set_root(pos, -2, -2, count)
                 root_stack.remove(pos)
             if not root_stack:
                 # for i in score_board:
@@ -423,15 +409,12 @@ class QuridoBoard:
                     if score_board[i][end_line] < score:
                         score = score_board[i][end_line]
             if game_end:
+                if print_scoreboard:
+                    for i in range(MAX_BOARD_SIZE, 0, -2):
+                        for j in range(1, MAX_BOARD_SIZE + 1, 2):
+                            print(str(score_board[j][i]) + "\t", end='')
+                        print()
                 return score
-
-    def get_opponent_player(self, player_num):
-        if player_num == BOARD_PLAYER1:
-            return BOARD_PLAYER2
-        elif player_num == BOARD_PLAYER2:
-            return BOARD_PLAYER1
-        else:
-            return -1
 
 
 
